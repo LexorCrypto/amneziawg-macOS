@@ -18,10 +18,35 @@ $ cp Sources/WireGuardApp/Config/Developer.xcconfig.template Sources/WireGuardAp
 $ vim Sources/WireGuardApp/Config/Developer.xcconfig
 ```
 
-- Install swiftlint and go 1.19:
+- Install SwiftLint and Go. For the Lexor macOS build wrapper below, use
+  Homebrew Go 1.21:
 
 ```
-$ brew install swiftlint go
+$ brew install swiftlint go@1.21
+```
+
+### Lexor macOS local build
+
+For local macOS builds of this AmneziaWG fork, use the reproducible build
+wrapper:
+
+```
+$ scripts/build-macos.sh
+```
+
+The script builds from `/private/tmp/awg-apple-build/source` so the Go bridge
+Makefile never sees spaces in the checkout path. It also uses Homebrew Go 1.21
+from `/opt/homebrew/opt/go@1.21/bin`, stores Go caches under `/private/tmp`, and
+skips the legacy SwiftLint phases by passing `SKIP_SWIFTLINT=1`.
+
+By default this creates a local ad-hoc Debug build and writes a zip to
+`build/macos-debug-<timestamp>/`. To attempt an Apple-signed build, populate
+`Sources/WireGuardApp/Config/Developer.xcconfig` with a real `DEVELOPMENT_TEAM`
+and bundle IDs/profiles that have Packet Tunnel Provider and App Groups enabled,
+then run:
+
+```
+$ scripts/build-macos.sh --signed
 ```
 
 - Open project in Xcode:
