@@ -1,150 +1,114 @@
 # AmneziaWG for macOS
 
 This repository is a Lexor-maintained macOS-focused fork of
-`amnezia-vpn/awg-apple`. The supported product target here is the macOS app and
-its Network Extension packaging.
+[`amnezia-vpn/awg-apple`](https://github.com/amnezia-vpn/awg-apple).
 
-The upstream iOS targets and shared Apple code are still present because the
-original project shares sources between iOS and macOS, but this fork is not
-maintained as an iOS app distribution. Build, packaging, signing, and release
-work in this repository should be treated as macOS-first unless explicitly
-stated otherwise.
+The supported product target in this fork is the macOS app with its Packet
+Tunnel Network Extension. The upstream iOS targets and shared Apple sources are
+still present because the original project shares code between platforms, but
+this repository is not maintained as an iOS distribution.
 
-## Building
+## Current Status
 
-- Clone this repo:
+- macOS app version: `1.0.15 (26)`
+- Go backend: `github.com/amnezia-vpn/amneziawg-go v0.2.18`
+- Required Go toolchain: Go `1.24` or newer
+- Local packaging: reproducible ad-hoc `Debug` app archives and DMG packages
+- Production readiness: Apple Developer signing, provisioning profiles, and
+  Network Extension entitlements must be configured before shipping or using the
+  Packet Tunnel extension as a production-signed build
 
-```
-$ git clone https://github.com/LexorCrypto/amneziawg-macOS.git awg-apple
-$ cd awg-apple
-```
+AmneziaWG 2.0 parameters are supported by the macOS parser, exporter, and
+Network Extension UAPI generator:
 
-- Rename and populate developer team ID file:
+`Jc`, `Jmin`, `Jmax`, `S1`-`S4`, `H1`-`H4`, `I1`-`I5`.
 
-```
-$ cp Sources/WireGuardApp/Config/Developer.xcconfig.template Sources/WireGuardApp/Config/Developer.xcconfig
-$ vim Sources/WireGuardApp/Config/Developer.xcconfig
-```
+## Quick Start
 
-- Install SwiftLint and Go. The AmneziaWG 2.0 Go bridge requires Go 1.24 or
-  newer:
+Install Xcode command line tools, SwiftLint, and Go:
 
-```
-$ brew install swiftlint go
+```sh
+brew install swiftlint go
 ```
 
-### Lexor macOS local build
+Build a local unsigned/ad-hoc macOS app:
 
-For local macOS builds of this AmneziaWG fork, use the reproducible build
-wrapper:
-
-```
-$ scripts/build-macos.sh
+```sh
+scripts/build-macos.sh
 ```
 
-The script builds from `/private/tmp/awg-apple-build/source` so the Go bridge
-Makefile never sees spaces in the checkout path. It uses the first Go 1.24+
-toolchain found on `PATH` unless `AWG_GO_BIN_DIR` is set, stores Go caches under
-`/private/tmp`, and skips the legacy SwiftLint phases by passing
-`SKIP_SWIFTLINT=1`.
+Create a DMG package:
 
-By default this creates a local ad-hoc Debug build and writes a zip to
-`build/macos-debug-<timestamp>/`. To attempt an Apple-signed build, populate
-`Sources/WireGuardApp/Config/Developer.xcconfig` with a real `DEVELOPMENT_TEAM`
-and bundle IDs/profiles that have Packet Tunnel Provider and App Groups enabled,
-then run:
-
-```
-$ scripts/build-macos.sh --signed
+```sh
+scripts/build-macos-dmg.sh
 ```
 
-To create a mountable DMG with the app and an Applications shortcut, run:
+Build artifacts are written to:
 
-```
-$ scripts/build-macos-dmg.sh
-```
-
-The DMG wrapper reuses the same temp-copy build path and signing mode as
-`scripts/build-macos.sh`.
-
-This fork builds the Go bridge against `github.com/amnezia-vpn/amneziawg-go`
-`v0.2.18`. The macOS parser, exporter, and Network Extension UAPI generator
-preserve AmneziaWG 2.0 interface parameters `Jc`, `Jmin`, `Jmax`, `S1`-`S4`,
-`H1`-`H4`, and `I1`-`I5`.
-
-- Open project in Xcode:
-
-```
-$ open WireGuard.xcodeproj
+```text
+build/macos-<configuration>-<timestamp>/
 ```
 
-- Flip switches, press buttons, and make whirling noises until Xcode builds it.
+The build wrappers copy the source tree to `/private/tmp/awg-apple-build/source`
+before running Xcode. This avoids the Go bridge Makefile issues caused by
+checkout paths that contain spaces, such as `VS code`.
 
-## WireGuardKit integration
+## Documentation
 
-The notes below are inherited from upstream and may mention iOS. For this fork,
-macOS remains the supported application target.
+- [macOS build guide](docs/macos-build.md)
+- [Apple signing and entitlements](docs/macos-signing.md)
+- [AmneziaWG 2.0 integration notes](docs/amneziawg-2.md)
 
-1. Open your Xcode project and add the Swift package with the following URL:
-   
-   ```
+## Manual Xcode Build
+
+For signed Xcode builds, create a local developer configuration:
+
+```sh
+cp Sources/WireGuardApp/Config/Developer.xcconfig.template \
+  Sources/WireGuardApp/Config/Developer.xcconfig
+```
+
+Then set your Apple Developer Team ID and bundle identifiers in
+`Sources/WireGuardApp/Config/Developer.xcconfig`.
+
+Open the project:
+
+```sh
+open WireGuard.xcodeproj
+```
+
+The reproducible scripts are preferred for local macOS work because they set the
+Go caches, temp source copy, SwiftLint behavior, and signing mode consistently.
+
+## WireGuardKit Integration
+
+The upstream WireGuardKit integration notes remain relevant for consumers who
+embed `WireGuardKit` separately. They may mention iOS because they come from the
+original Apple project. For this fork, macOS remains the maintained application
+target.
+
+1. Add the Swift package:
+
+   ```text
    https://git.zx2c4.com/wireguard-apple
    ```
-   
-2. `WireGuardKit` links against `wireguard-go-bridge` library, but it cannot build it automatically
-   due to Swift package manager limitations. So it needs a little help from a developer. 
-   Please follow the instructions below to create a build target(s) for `wireguard-go-bridge`.
-   
-   - In Xcode, click File -> New -> Target. Switch to "Other" tab and choose "External Build 
-     System".
-   - Type in `WireGuardGoBridge<PLATFORM>` under the "Product name", replacing the `<PLATFORM>` 
-     placeholder with the name of the platform. For example, when targeting macOS use `macOS`, or 
-     when targeting iOS use `iOS`.
-     Make sure the build tool is set to: `/usr/bin/make` (default).
-   - In the appeared "Info" tab of a newly created target, type in the "Directory" path under 
-     the "External Build Tool Configuration":
-     
-     ```
-     ${BUILD_DIR%Build/*}SourcePackages/checkouts/wireguard-apple/Sources/WireGuardKitGo
-     ```
-     
-   - Switch to "Build Settings" and find `SDKROOT`.
-     Type in `macosx` if you target macOS, or type in `iphoneos` if you target iOS.
-   
-3. Go to Xcode project settings and locate your network extension target and switch to 
-   "Build Phases" tab.
-   
-   - Locate "Dependencies" section and hit "+" to add `WireGuardGoBridge<PLATFORM>` replacing 
-     the `<PLATFORM>` placeholder with the name of platform matching the network extension 
-     deployment target (i.e macOS or iOS).
-     
-   - Locate the "Link with binary libraries" section and hit "+" to add `WireGuardKit`.
-   
-4. In Xcode project settings, locate your main bundle app and switch to "Build Phases" tab. 
-   Locate the "Link with binary libraries" section and hit "+" to add `WireGuardKit`.
-   
-5. iOS only: Locate Bitcode settings under your application target, Build settings -> Enable Bitcode, 
-   change the corresponding value to "No".
-   
-Note that if you ship your app for both iOS and macOS, make sure to repeat the steps 2-4 twice, 
-once per platform.
 
-## MIT License
+2. `WireGuardKit` links against the `wireguard-go-bridge` library, but Swift
+   Package Manager cannot build it automatically. Create an External Build
+   System target named `WireGuardGoBridge<PLATFORM>`, using `/usr/bin/make` as
+   the build tool.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in
-the Software without restriction, including without limitation the rights to
-use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
-of the Software, and to permit persons to whom the Software is furnished to do
-so, subject to the following conditions:
+3. Point the External Build System directory to:
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+   ```text
+   ${BUILD_DIR%Build/*}SourcePackages/checkouts/wireguard-apple/Sources/WireGuardKitGo
+   ```
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+4. Set `SDKROOT` to `macosx` for macOS consumers.
+
+5. Add `WireGuardGoBridge<PLATFORM>` as a dependency of the Network Extension
+   target and link `WireGuardKit` into both the extension and host app.
+
+## License
+
+This project keeps the upstream MIT license. See [COPYING](COPYING).
