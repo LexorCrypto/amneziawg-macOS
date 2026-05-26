@@ -1,14 +1,22 @@
-# [WireGuard](https://www.wireguard.com/) for iOS and macOS
+# AmneziaWG for macOS
 
-This project contains an application for iOS and for macOS, as well as many components shared between the two of them. You may toggle between the two platforms by selecting the target from within Xcode.
+This repository is a Lexor-maintained macOS-focused fork of
+`amnezia-vpn/awg-apple`. The supported product target here is the macOS app and
+its Network Extension packaging.
+
+The upstream iOS targets and shared Apple code are still present because the
+original project shares sources between iOS and macOS, but this fork is not
+maintained as an iOS app distribution. Build, packaging, signing, and release
+work in this repository should be treated as macOS-first unless explicitly
+stated otherwise.
 
 ## Building
 
 - Clone this repo:
 
 ```
-$ git clone https://git.zx2c4.com/wireguard-apple
-$ cd wireguard-apple
+$ git clone https://github.com/LexorCrypto/amneziawg-macOS.git awg-apple
+$ cd awg-apple
 ```
 
 - Rename and populate developer team ID file:
@@ -49,6 +57,15 @@ then run:
 $ scripts/build-macos.sh --signed
 ```
 
+To create a mountable DMG with the app and an Applications shortcut, run:
+
+```
+$ scripts/build-macos-dmg.sh
+```
+
+The DMG wrapper reuses the same temp-copy build path and signing mode as
+`scripts/build-macos.sh`.
+
 - Open project in Xcode:
 
 ```
@@ -58,6 +75,9 @@ $ open WireGuard.xcodeproj
 - Flip switches, press buttons, and make whirling noises until Xcode builds it.
 
 ## WireGuardKit integration
+
+The notes below are inherited from upstream and may mention iOS. For this fork,
+macOS remains the supported application target.
 
 1. Open your Xcode project and add the Swift package with the following URL:
    
