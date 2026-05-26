@@ -19,7 +19,7 @@ Options:
   -h, --help             Show this help
 
 Environment overrides:
-  AWG_GO_BIN_DIR         Go 1.21 bin directory (default: /opt/homebrew/opt/go@1.21/bin)
+  AWG_GO_BIN_DIR         Go 1.24+ bin directory (default: first go on PATH)
   AWG_BUILD_TMP_ROOT     Temp build root (default: /private/tmp/awg-apple-build)
   AWG_BUILD_OUTPUT_ROOT  Output root for archives (default: <repo>/build)
   AWG_BUILD_STAMP        Archive timestamp override
@@ -37,6 +37,16 @@ die() {
 
 require_command() {
     command -v "$1" >/dev/null 2>&1 || die "missing required command: $1"
+}
+
+go_version_at_least_1_24() {
+    local version="${1#go}"
+    local major="${version%%.*}"
+    local rest="${version#*.}"
+    local minor="${rest%%.*}"
+
+    [[ "$major" =~ ^[0-9]+$ && "$minor" =~ ^[0-9]+$ ]] || return 1
+    (( major > 1 || (major == 1 && minor >= 24) ))
 }
 
 read_xcconfig_value() {
@@ -106,12 +116,20 @@ project_root="$(cd "$script_dir/.." && pwd -P)"
 tmp_root="${AWG_BUILD_TMP_ROOT:-/private/tmp/awg-apple-build}"
 source_copy="$tmp_root/source"
 derived_data="$tmp_root/DerivedData"
-go_bin_dir="${AWG_GO_BIN_DIR:-/opt/homebrew/opt/go@1.21/bin}"
+go_bin_dir="${AWG_GO_BIN_DIR:-}"
 go_cache="${GOCACHE:-$tmp_root/go-cache}"
 go_mod_cache="${GOMODCACHE:-$tmp_root/go-mod-cache}"
 output_root="${AWG_BUILD_OUTPUT_ROOT:-$project_root/build}"
 
-[[ -x "$go_bin_dir/go" ]] || die "Go 1.21 not found at $go_bin_dir/go; set AWG_GO_BIN_DIR"
+if [[ -z "$go_bin_dir" ]]; then
+    require_command go
+    go_bin_dir="$(dirname "$(command -v go)")"
+fi
+
+[[ -x "$go_bin_dir/go" ]] || die "Go not found at $go_bin_dir/go; set AWG_GO_BIN_DIR"
+go_version="$("$go_bin_dir/go" env GOVERSION 2>/dev/null || true)"
+[[ -n "$go_version" ]] || go_version="$("$go_bin_dir/go" version | awk '{print $3}')"
+go_version_at_least_1_24 "$go_version" || die "AmneziaWG 2.0 Go bridge requires Go 1.24 or newer; found $("$go_bin_dir/go" version)"
 
 require_command xcodebuild
 require_command rsync

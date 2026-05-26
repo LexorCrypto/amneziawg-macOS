@@ -25,12 +25,20 @@ build: $(DESTDIR)/libwg-go.a
 version-header: $(DESTDIR)/wireguard-go-version.h
 
 REAL_GOROOT := $(shell go env GOROOT 2>/dev/null)
+GOROOT_SOURCE_ID := $(REAL_GOROOT):$(shell go env GOVERSION 2>/dev/null)
 export GOROOT := $(BUILDDIR)/goroot
-$(GOROOT)/.prepared:
+$(GOROOT)/.prepared: FORCE
 	[ -n "$(REAL_GOROOT)" ]
-	mkdir -p "$(GOROOT)"
-	rsync -a --delete --exclude=pkg/obj/go-build "$(REAL_GOROOT)/" "$(GOROOT)/"
-	cat goruntime-*.diff | patch -p1 -f -N -r- -d "$(GOROOT)"
+	set -e; \
+	source_id="$(GOROOT_SOURCE_ID)"; \
+	current_id="$$(cat "$(GOROOT)/.source-version" 2>/dev/null || true)"; \
+	if [ "$$current_id" != "$$source_id" ]; then \
+		rm -rf "$(GOROOT)"; \
+		mkdir -p "$(GOROOT)"; \
+		rsync -a --delete --exclude=pkg/obj/go-build "$(REAL_GOROOT)/" "$(GOROOT)/"; \
+		cat goruntime-*.diff | patch -p1 -f -N -r- -d "$(GOROOT)"; \
+		printf '%s\n' "$$source_id" > "$(GOROOT)/.source-version"; \
+	fi
 	touch "$@"
 
 define libwg-go-a
@@ -46,7 +54,8 @@ endef
 $(foreach ARCH,$(ARCHS),$(eval $(call libwg-go-a,$(ARCH))))
 
 $(DESTDIR)/wireguard-go-version.h: go.mod $(GOROOT)/.prepared
-	sed -E -n 's/.*github\.com\/amnezia-vpn\/amnezia-wg +(v[^[:space:]]+).*/#define WIREGUARD_GO_VERSION "\1"/p; s/.*golang\.zx2c4\.com\/wireguard +v[0-9.]+-[0-9]+-([0-9a-f]{8})[0-9a-f]{4}.*/#define WIREGUARD_GO_VERSION "\1"/p' "$<" > "$@"
+	@mkdir -vp "$(DESTDIR)"
+	sed -E -n 's/.*github\.com\/amnezia-vpn\/amneziawg-go +(v[^[:space:]]+).*/#define WIREGUARD_GO_VERSION "\1"/p; s/.*github\.com\/amnezia-vpn\/amnezia-wg +(v[^[:space:]]+).*/#define WIREGUARD_GO_VERSION "\1"/p; s/.*golang\.zx2c4\.com\/wireguard +v[0-9.]+-[0-9]+-([0-9a-f]{8})[0-9a-f]{4}.*/#define WIREGUARD_GO_VERSION "\1"/p' "$<" > "$@"
 	grep -q WIREGUARD_GO_VERSION "$@" || echo '#define WIREGUARD_GO_VERSION "unknown"' > "$@"
 
 $(DESTDIR)/libwg-go.a: $(foreach ARCH,$(ARCHS),$(BUILDDIR)/libwg-go-$(ARCH).a)
@@ -58,4 +67,6 @@ clean:
 
 install: build
 
-.PHONY: clean build version-header install
+FORCE:
+
+.PHONY: FORCE clean build version-header install

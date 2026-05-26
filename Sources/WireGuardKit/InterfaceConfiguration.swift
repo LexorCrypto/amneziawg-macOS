@@ -12,10 +12,17 @@ public struct InterfaceConfiguration {
     public var Jmax: UInt16?
     public var S1: UInt16?
     public var S2: UInt16?
-    public var H1: UInt32?
-    public var H2: UInt32?
-    public var H3: UInt32?
-    public var H4: UInt32?
+    public var S3: UInt16?
+    public var S4: UInt16?
+    public var H1: String?
+    public var H2: String?
+    public var H3: String?
+    public var H4: String?
+    public var I1: String?
+    public var I2: String?
+    public var I3: String?
+    public var I4: String?
+    public var I5: String?
     public var listenPort: UInt16?
     public var mtu: UInt16?
     public var dns = [DNSServer]()
@@ -33,6 +40,22 @@ extension InterfaceConfiguration: Equatable {
 
         return lhs.privateKey == rhs.privateKey &&
             lhsAddresses == rhsAddresses &&
+            lhs.Jc == rhs.Jc &&
+            lhs.Jmin == rhs.Jmin &&
+            lhs.Jmax == rhs.Jmax &&
+            lhs.S1 == rhs.S1 &&
+            lhs.S2 == rhs.S2 &&
+            lhs.S3 == rhs.S3 &&
+            lhs.S4 == rhs.S4 &&
+            lhs.H1 == rhs.H1 &&
+            lhs.H2 == rhs.H2 &&
+            lhs.H3 == rhs.H3 &&
+            lhs.H4 == rhs.H4 &&
+            lhs.I1 == rhs.I1 &&
+            lhs.I2 == rhs.I2 &&
+            lhs.I3 == rhs.I3 &&
+            lhs.I4 == rhs.I4 &&
+            lhs.I5 == rhs.I5 &&
             lhs.listenPort == rhs.listenPort &&
             lhs.mtu == rhs.mtu &&
             lhs.dns == rhs.dns &&

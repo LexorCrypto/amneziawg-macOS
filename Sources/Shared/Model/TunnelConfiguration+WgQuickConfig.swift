@@ -72,7 +72,13 @@ extension TunnelConfiguration {
                     } else {
                         attributes[key] = value
                     }
-                    let interfaceSectionKeys: Set<String> = ["privatekey", "listenport", "address", "dns", "mtu", "jc", "jmin", "jmax", "s1", "s2", "h1", "h2", "h3", "h4"]
+                    let interfaceSectionKeys: Set<String> = [
+                        "privatekey", "listenport", "address", "dns", "mtu",
+                        "jc", "jmin", "jmax",
+                        "s1", "s2", "s3", "s4",
+                        "h1", "h2", "h3", "h4",
+                        "i1", "i2", "i3", "i4", "i5"
+                    ]
                     let peerSectionKeys: Set<String> = ["publickey", "presharedkey", "allowedips", "endpoint", "persistentkeepalive"]
                     if parserState == .inInterfaceSection {
                         guard interfaceSectionKeys.contains(key) else {
@@ -145,6 +151,12 @@ extension TunnelConfiguration {
         if let S2 = interface.S2 {
             output.append("S2 = \(S2)\n")
         }
+        if let S3 = interface.S3 {
+            output.append("S3 = \(S3)\n")
+        }
+        if let S4 = interface.S4 {
+            output.append("S4 = \(S4)\n")
+        }
         if let H1 = interface.H1 {
             output.append("H1 = \(H1)\n")
         }
@@ -156,6 +168,21 @@ extension TunnelConfiguration {
         }
         if let H4 = interface.H4 {
             output.append("H4 = \(H4)\n")
+        }
+        if let I1 = interface.I1 {
+            output.append("I1 = \(I1)\n")
+        }
+        if let I2 = interface.I2 {
+            output.append("I2 = \(I2)\n")
+        }
+        if let I3 = interface.I3 {
+            output.append("I3 = \(I3)\n")
+        }
+        if let I4 = interface.I4 {
+            output.append("I4 = \(I4)\n")
+        }
+        if let I5 = interface.I5 {
+            output.append("I5 = \(I5)\n")
         }
         if !interface.addresses.isEmpty {
             let addressString = interface.addresses.map { $0.stringRepresentation }.joined(separator: ", ")
@@ -265,31 +292,53 @@ extension TunnelConfiguration {
             }
             interface.S2 = s2
         }
-        if let H1String = attributes["h1"] {
-            guard let h1 = UInt32(H1String) else {
-                throw ParseError.interfaceHasInvalidCustomParam(H1String)
+        if let S3String = attributes["s3"] {
+            guard let s3 = UInt16(S3String) else {
+                throw ParseError.interfaceHasInvalidCustomParam(S3String)
             }
-            interface.H1 = h1
+            interface.S3 = s3
+        }
+        if let S4String = attributes["s4"] {
+            guard let s4 = UInt16(S4String) else {
+                throw ParseError.interfaceHasInvalidCustomParam(S4String)
+            }
+            interface.S4 = s4
+        }
+        if let H1String = attributes["h1"] {
+            interface.H1 = try TunnelConfiguration.collate(customString: H1String)
         }
         if let H2String = attributes["h2"] {
-            guard let h2 = UInt32(H2String) else {
-                throw ParseError.interfaceHasInvalidCustomParam(H2String)
-            }
-            interface.H2 = h2
+            interface.H2 = try TunnelConfiguration.collate(customString: H2String)
         }
         if let H3String = attributes["h3"] {
-            guard let h3 = UInt32(H3String) else {
-                throw ParseError.interfaceHasInvalidCustomParam(H3String)
-            }
-            interface.H3 = h3
+            interface.H3 = try TunnelConfiguration.collate(customString: H3String)
         }
         if let H4String = attributes["h4"] {
-            guard let h4 = UInt32(H4String) else {
-                throw ParseError.interfaceHasInvalidCustomParam(H4String)
-            }
-            interface.H4 = h4
+            interface.H4 = try TunnelConfiguration.collate(customString: H4String)
+        }
+        if let I1String = attributes["i1"] {
+            interface.I1 = try TunnelConfiguration.collate(customString: I1String)
+        }
+        if let I2String = attributes["i2"] {
+            interface.I2 = try TunnelConfiguration.collate(customString: I2String)
+        }
+        if let I3String = attributes["i3"] {
+            interface.I3 = try TunnelConfiguration.collate(customString: I3String)
+        }
+        if let I4String = attributes["i4"] {
+            interface.I4 = try TunnelConfiguration.collate(customString: I4String)
+        }
+        if let I5String = attributes["i5"] {
+            interface.I5 = try TunnelConfiguration.collate(customString: I5String)
         }
         return interface
+    }
+
+    private static func collate(customString value: String) throws -> String {
+        guard !value.isEmpty else {
+            throw ParseError.interfaceHasInvalidCustomParam(value)
+        }
+        return value
     }
 
     private static func collate(peerAttributes attributes: [String: String]) throws -> PeerConfiguration {

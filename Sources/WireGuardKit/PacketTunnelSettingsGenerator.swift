@@ -62,6 +62,12 @@ class PacketTunnelSettingsGenerator {
         if let S2 = tunnelConfiguration.interface.S2 {
             wgSettings.append("s2=\(S2)\n")
         }
+        if let S3 = tunnelConfiguration.interface.S3 {
+            wgSettings.append("s3=\(S3)\n")
+        }
+        if let S4 = tunnelConfiguration.interface.S4 {
+            wgSettings.append("s4=\(S4)\n")
+        }
         if let H1 = tunnelConfiguration.interface.H1 {
             wgSettings.append("h1=\(H1)\n")
         }
@@ -73,6 +79,21 @@ class PacketTunnelSettingsGenerator {
         }
         if let H4 = tunnelConfiguration.interface.H4 {
             wgSettings.append("h4=\(H4)\n")
+        }
+        if let I1 = tunnelConfiguration.interface.I1 {
+            wgSettings.append("i1=\(I1)\n")
+        }
+        if let I2 = tunnelConfiguration.interface.I2 {
+            wgSettings.append("i2=\(I2)\n")
+        }
+        if let I3 = tunnelConfiguration.interface.I3 {
+            wgSettings.append("i3=\(I3)\n")
+        }
+        if let I4 = tunnelConfiguration.interface.I4 {
+            wgSettings.append("i4=\(I4)\n")
+        }
+        if let I5 = tunnelConfiguration.interface.I5 {
+            wgSettings.append("i5=\(I5)\n")
         }
         if !tunnelConfiguration.peers.isEmpty {
             wgSettings.append("replace_peers=true\n")

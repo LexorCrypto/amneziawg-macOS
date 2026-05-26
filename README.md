@@ -26,11 +26,11 @@ $ cp Sources/WireGuardApp/Config/Developer.xcconfig.template Sources/WireGuardAp
 $ vim Sources/WireGuardApp/Config/Developer.xcconfig
 ```
 
-- Install SwiftLint and Go. For the Lexor macOS build wrapper below, use
-  Homebrew Go 1.21:
+- Install SwiftLint and Go. The AmneziaWG 2.0 Go bridge requires Go 1.24 or
+  newer:
 
 ```
-$ brew install swiftlint go@1.21
+$ brew install swiftlint go
 ```
 
 ### Lexor macOS local build
@@ -43,9 +43,10 @@ $ scripts/build-macos.sh
 ```
 
 The script builds from `/private/tmp/awg-apple-build/source` so the Go bridge
-Makefile never sees spaces in the checkout path. It also uses Homebrew Go 1.21
-from `/opt/homebrew/opt/go@1.21/bin`, stores Go caches under `/private/tmp`, and
-skips the legacy SwiftLint phases by passing `SKIP_SWIFTLINT=1`.
+Makefile never sees spaces in the checkout path. It uses the first Go 1.24+
+toolchain found on `PATH` unless `AWG_GO_BIN_DIR` is set, stores Go caches under
+`/private/tmp`, and skips the legacy SwiftLint phases by passing
+`SKIP_SWIFTLINT=1`.
 
 By default this creates a local ad-hoc Debug build and writes a zip to
 `build/macos-debug-<timestamp>/`. To attempt an Apple-signed build, populate
@@ -65,6 +66,11 @@ $ scripts/build-macos-dmg.sh
 
 The DMG wrapper reuses the same temp-copy build path and signing mode as
 `scripts/build-macos.sh`.
+
+This fork builds the Go bridge against `github.com/amnezia-vpn/amneziawg-go`
+`v0.2.18`. The macOS parser, exporter, and Network Extension UAPI generator
+preserve AmneziaWG 2.0 interface parameters `Jc`, `Jmin`, `Jmax`, `S1`-`S4`,
+`H1`-`H4`, and `I1`-`I5`.
 
 - Open project in Xcode:
 
